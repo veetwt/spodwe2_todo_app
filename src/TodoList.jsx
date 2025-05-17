@@ -21,16 +21,23 @@ const AddTodo = ({ addTodo }) => {
   );
 };
 
-const TodoFilter = () => {
+const TodoFilter = ({setFilter}) => {
+  
+  const handleFilterClick = (event) => {
+    event.preventDefault();
+    const filter = event.target.id.replace("filter-", "");
+    setFilter(filter);
+  }
+  
   return (
     <div className="center-content">
-      <a href="#" id="filter-all">
+      <a href="#" id="filter-all" onClick={handleFilterClick}>
         Todos os itens
       </a>
-      <a href="#" id="filter-done">
+      <a href="#" id="filter-done" onClick={handleFilterClick}>
         Concluídos
       </a>
-      <a href="#" id="filter-pending">
+      <a href="#" id="filter-pending" onClick={handleFilterClick}>
         Pendentes
       </a>
     </div>
@@ -57,7 +64,19 @@ const TodoItem = ({ todo, markTodoAsDone }) => {
 };
 
 const TodoList = () => {
-  const [todos, setTodos] = useState();
+  const [todos, setTodos] = useState([]);
+
+  const [filter, setFilter] = useState("all");
+
+  const filterBy = (todo) => {
+    if (filter === "all") return true;
+    if (filter === "done") return todo.done;
+    if (filter === "pending") return !todo.done;
+  };
+
+  const applyFilter = (newFilter) => {
+    setFilter(newFilter);
+  };
 
   useEffect(() => {
     console.log("useEffect");
@@ -95,12 +114,12 @@ const TodoList = () => {
         Versão inicial da aplicação de lista de tarefas para a disciplina
         SPODWE2
       </div>
-      <TodoFilter />
+      <TodoFilter setFilter={applyFilter}/>
       <AddTodo addTodo={addTodo} />
 
       {todos ? (
         <ul id="todo-list">
-          {todos.map((todo, index) => (
+          {todos.filter(filterBy).map((todo, index) => (
             <TodoItem key={index} todo={todo} markTodoAsDone={markTodoAsDone} />
           ))}
         </ul>
