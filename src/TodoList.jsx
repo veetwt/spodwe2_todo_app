@@ -1,12 +1,31 @@
 import { useState, useEffect } from "react";
 
 const AddTodo = ({ addTodo }) => {
-  const handleKeyPress = (event) => {
+  const handleKeyPress = async (event) => {
     if (event.key === "Enter") {
       const input = event.target;
       const text = input.value.trim();
+
       if (text) {
-        addTodo(text);
+        const newTodo = await fetch("http://localhost:3000/todos", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: text,
+            done: false,
+          }),
+        }).then((response) => {
+          if (!response.ok) {
+            throw new Error("Erro ao adicionar a tarefa");
+          }
+          return response.json();
+        });
+
+        console.log(newTodo);
+
+        addTodo(newTodo);
         input.value = "";
       }
     }
@@ -21,14 +40,13 @@ const AddTodo = ({ addTodo }) => {
   );
 };
 
-const TodoFilter = ({setFilter}) => {
-  
+const TodoFilter = ({ setFilter }) => {
   const handleFilterClick = (event) => {
     event.preventDefault();
     const filter = event.target.id.replace("filter-", "");
     setFilter(filter);
-  }
-  
+  };
+
   return (
     <div className="center-content">
       <a href="#" id="filter-all" onClick={handleFilterClick}>
@@ -79,7 +97,6 @@ const TodoList = () => {
   };
 
   useEffect(() => {
-    console.log("useEffect");
     const fetchTodos = async () => {
       try {
         const response = await fetch("http://localhost:3000/todos");
@@ -96,14 +113,30 @@ const TodoList = () => {
     fetchTodos();
   }, []);
 
-  const addTodo = (text) => {
-    const newTodo = { id: crypto.randomUUID(), text, done: false };
+  const addTodo = (newTodo) => {
+    console.log(newTodo);
     setTodos((prevTodos) => [...prevTodos, newTodo]);
+    if (filter === "done") applyFilter("all");
   };
 
-  const markTodoAsDone = (id) => {
+  const markTodoAsDone = async (id) => {
+    const updatedTodo = await fetch(`http://localhost:3000/todos/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        done: true,
+      }),
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error("Erro ao marcar a tarefa como concluída");
+      }
+      return response.json();
+    });
+
     setTodos((prevTodos) =>
-      prevTodos.map((todo) => (todo.id === id ? { ...todo, done: true } : todo))
+      prevTodos.map((todo) => (todo.id === updatedTodo.id ? updatedTodo : todo))
     );
   };
 
@@ -114,7 +147,7 @@ const TodoList = () => {
         Versão inicial da aplicação de lista de tarefas para a disciplina
         SPODWE2
       </div>
-      <TodoFilter setFilter={applyFilter}/>
+      <TodoFilter setFilter={applyFilter} />
       <AddTodo addTodo={addTodo} />
 
       {todos ? (
